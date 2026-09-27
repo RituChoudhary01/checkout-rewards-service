@@ -507,15 +507,6 @@ More details are documented in `DECISIONS.md`.
 
 # Approximate Development Time
 
-Approximately **2 hours** of focused implementation and testing, excluding setup/debugging iterations.
+Approximately **4 hours** of focused implementation and testing, excluding setup/debugging iterations.
 
 ---
-
-## License
-
-This project was created as a take-home assignment.
-```
-
-Ye **final README** ke liye enough hai. Isko `README.md` mein paste kar do.
-
-Ek correction maine jaan-bujhkar rakhi hai: README mein **unsupported claims nahi daale**—jaise specific product-lock ordering ya koi concurrency scenario jo actual tests mein nahi hai. Isse evaluator ke saamne documentation aur implementation match rahenge.
