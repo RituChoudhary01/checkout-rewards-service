@@ -1,0 +1,112 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+}
+
+enum CouponStatus {
+  AVAILABLE
+  REDEEMED
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  // Money is stored as integer paise/cents — never floating point.
+  priceInPaise Int
+  stock     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model Cart {
+  id         String     @id @default(uuid())
+  status     CartStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  items CartItem[]
+  order Order?
+}
+
+model CartItem {
+  id        String @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  // One product can appear only once in a cart.
+  @@unique([cartId, productId])
+  @@index([cartId])
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  cartId          String   @unique
+  subtotalInPaise Int
+  discountInPaise Int      @default(0)
+  totalInPaise    Int
+  couponId        String?  @unique
+  createdAt       DateTime @default(now())
+
+  cart        Cart           @relation(fields: [cartId], references: [id])
+  coupon      Coupon?        @relation(fields: [couponId], references: [id])
+  items       OrderItem[]
+  idempotency IdempotencyKey?
+}
+
+model OrderItem {
+  id                       String @id @default(uuid())
+  orderId                  String
+  productId                String
+
+  // Snapshot fields preserve the exact purchase information.
+  productNameSnapshot      String
+  unitPriceInPaiseSnapshot Int
+  quantity                 Int
+  lineTotalInPaise         Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model Coupon {
+  id              String       @id @default(uuid())
+  code            String       @unique
+  discountPercent Int
+
+  // Example: 5 means reward generated for the 5th successful order.
+  milestoneNumber Int          @unique
+
+  status     CouponStatus @default(AVAILABLE)
+  createdAt  DateTime     @default(now())
+  redeemedAt DateTime?
+
+  order Order?
+}
+
+model IdempotencyKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  orderId   String   @unique
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
